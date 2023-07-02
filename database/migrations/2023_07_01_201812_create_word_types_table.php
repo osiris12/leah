@@ -11,10 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('part_of_speeches', function (Blueprint $table) {
+        Schema::create('word_types', function (Blueprint $table) {
             $table->id();
             $table->string('pos');
-            $table->string('pos_full');
+            $table->string('pos_full')->default('');
             $table->timestamps();
         });
     }
@@ -24,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('part_of_speeches');
+        Schema::dropIfExists('word_types');
     }
 };

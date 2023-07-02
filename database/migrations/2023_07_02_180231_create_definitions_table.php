@@ -13,6 +13,9 @@ return new class extends Migration
     {
         Schema::create('definitions', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('word_id')->constrained();
+            $table->foreignId('word_type_id')->constrained();
+            $table->text('definition');
             $table->timestamps();
         });
     }

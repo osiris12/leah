@@ -17,25 +17,7 @@ return new class extends Migration
             $table->foreignId('translated_word_id');
             $table->timestamps();
         });
-
-        $translations = [
-            [
-                'source_word_id' => 1,
-                'translated_word_id' => 2
-            ],
-            [
-                'source_word_id' => 1,
-                'translated_word_id' => 3
-            ],
-        ];
-
-        foreach($translations as $translation) {
-            $data = new \App\Models\Translation();
-            foreach($translation as $key => $val) {
-                $data->$key = $val;
-            }
-            $data->save();
-        }
+        
     }
 
     /**

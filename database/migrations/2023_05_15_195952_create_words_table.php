@@ -15,32 +15,10 @@ return new class extends Migration
         Schema::create('words', function (Blueprint $table) {
             $table->id();
             $table->string('word');
-            $table->foreignId('language_id')->constrained();
+            $table->foreignId('language_id')->default(1)->constrained();
             $table->timestamps();
         });
 
-        $words = [
-            [
-                'word' => 'Ruidoso',
-                'language_id' => 2
-            ],
-            [
-                'word' => 'Noisy',
-                'language_id' => 1
-            ],
-            [
-                'word' => 'Loud',
-                'language_id' => 2
-            ],
-        ];
-
-        foreach($words as $word) {
-            $data = new Word();
-            foreach($word as $key => $val) {
-                $data->$key = $val;
-            }
-            $data->save();
-        }
     }
 
     /**
