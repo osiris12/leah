@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Word;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -17,6 +18,29 @@ return new class extends Migration
             $table->foreignId('language_id')->constrained();
             $table->timestamps();
         });
+
+        $words = [
+            [
+                'word' => 'Ruidoso',
+                'language_id' => 2
+            ],
+            [
+                'word' => 'Noisy',
+                'language_id' => 1
+            ],
+            [
+                'word' => 'Loud',
+                'language_id' => 2
+            ],
+        ];
+
+        foreach($words as $word) {
+            $data = new Word();
+            foreach($word as $key => $val) {
+                $data->$key = $val;
+            }
+            $data->save();
+        }
     }
 
     /**
