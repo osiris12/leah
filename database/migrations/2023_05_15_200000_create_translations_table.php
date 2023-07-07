@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignId('translated_word_id');
             $table->timestamps();
         });
-        
+
     }
 
     /**
