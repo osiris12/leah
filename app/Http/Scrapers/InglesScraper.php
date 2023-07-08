@@ -67,6 +67,6 @@ class InglesScraper extends Scraper
                 }
             });
 
-        return ["spanish_words" => $spanishWords];
+        return $spanishWords;
     }
 }

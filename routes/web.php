@@ -16,11 +16,13 @@ use Inertia\Inertia;
 |
 */
 
+Route::get('/', function () {
+    return Inertia::render('Welcome');
+});
+
 Route::get('/{word}', function ($word) {
     $inglesScraper = new InglesScraper();
-    return Inertia::render('Welcome', [
-        'words' => $inglesScraper->parseTranslationPage($word)
-    ]);
+    return ['words' => $inglesScraper->parseTranslationPage($word)];
 });
 
 Route::get('/dashboard', function () {
