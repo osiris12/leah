@@ -2,114 +2,71 @@
 
 namespace App\Http\Scrapers;
 
+use Illuminate\Support\Facades\Log;
+use InvalidArgumentException;
 use Psr\Http\Message\StreamInterface;
-use SebastianBergmann\Invoker\Exception;
 use Symfony\Component\DomCrawler\Crawler;
 
 class InglesScraper extends Scraper
 {
-    /**
-     * Gets the translation (traductor) page from ingles.com, i.e.(https://www.ingles.com/traductor/conforme)
-     * @param string $word
-     * @return StreamInterface
-     * @throws \GuzzleHttp\Exception\GuzzleException
-     */
-    public function getTranslationPage(string $word): StreamInterface
+    public function parseTranslationPage(string $word)
     {
-        return $this->client->request('GET', "/traductor/$word")->getBody();
-    }
-
-    public function parseTranslationPage()
-    {
-        $html = $this->getTranslationPage('asustar');
-        $this->parsePartsOfSpeech($html);
-
+//        $html = $this->client->request('GET', "/traductor/$word")->getBody();
+        $html = $this->client->request('GET', "/traductor/$word")->getBody();
+        return $this->scrapeTranslationData($html, $word);
     }
 
     /**
      * Sections in translation page are split by parts of speech, i.e.
      * Adjective, Noun, Verb, etc.. Each section contains a list
      * of the translated English words.
-     * @return mixed
+     * @return string|bool
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    public function parsePartsOfSpeech(StreamInterface $html)
+    public function scrapeTranslationData(StreamInterface $html, $word): array|bool
     {
-        // Part of Speech class = .hWzdmlHx
-        // Sentence Example (Spanish) = .S7halQ2C
-        // Sentence Example (English) = .msZ0iHzp
-
         $crawler = new Crawler($html->getContents());
+        $searchWord = $crawler->filter("#dictionary-neodict-es > div");
+        if ($searchWord->count() <= 0) {
+            Log::alert("$word not found.");
+            return false;
+        }
 
-
-        $spanishWords = $crawler
-            ->filter("#dictionary-neodict-es > div")
+        $spanishWords = $searchWord
             ->each(function (Crawler $wordCrawler) {
-                $spanishWord = $wordCrawler->filter(".jXNWfTzf")->text();
-                $pos = $wordCrawler
-                    ->filter(".k5rFFEq7")
-                    ->each(function (Crawler $partOfSpeechCrawler) {
-                        $currentPos = $partOfSpeechCrawler->filter(".hWzdmlHx")->text();
-                        $englishWords = $partOfSpeechCrawler
-                            ->filter(".YR6epHeU")
-                            ->each(function (Crawler $englishWordCrawler) use($partOfSpeechCrawler) {
-                                $sentences = [];
-                                $sentences['spanish'] = $partOfSpeechCrawler->filter(".S7halQ2C")->text();
-                                $sentences['english'] = $partOfSpeechCrawler->filter(".msZ0iHzp")->text();
-                                return [$englishWordCrawler->text() => $sentences];
+                try {
+                    $spanishWord = $wordCrawler->filter(".jXNWfTzf")->text();
+                    $pos = $wordCrawler
+                        ->filter(".k5rFFEq7")
+                        ->each(function (Crawler $partOfSpeechCrawler) use($spanishWord) {
+                            try {
+                                $currentPos = $partOfSpeechCrawler->filter(".hWzdmlHx")->text();
+                                $englishWords = $partOfSpeechCrawler
+                                    ->filter(".AJ6Kb8A8 > .lbHJ7w6W > .RiMg1_4r > .lbHJ7w6W")
+                                    ->each(function (Crawler $englishWordCrawler) use($currentPos, $spanishWord) {
+                                        try {
+                                            $englishWord = $englishWordCrawler->filter(".YR6epHeU")->text();
+                                            $sentences = [];
+                                            $sentences['spanish'] = $englishWordCrawler->filter(".S7halQ2C")->text();
+                                            $sentences['english'] = $englishWordCrawler->filter(".msZ0iHzp")->text();
+                                            return [$englishWord => ["sentences" => $sentences]];
+                                        } catch (InvalidArgumentException $e) {
+                                            $error = "No direct translation for ($spanishWord) with part of speech of ($currentPos).";
+                                            Log::alert($error);
+                                        }
+                                    });
+                                return [$currentPos => ["english_words" => $englishWords]];
+                            } catch (\Exception $e) {
+                                $error = "No direct translation for ($spanishWord). ";
+                                Log::alert($error);
+                            }
                         });
-                        return [$currentPos => $englishWords];
-//                try {
-//                    $pos = $partOfSpeechCrawler
-//                        ->filter(".hWzdmlHx")
-//                        ->each(function (Crawler $crawler) {
-//                        $words = $crawler
-//                            ->filter(".YR6epHeU")
-//                            ->each(function(Crawler $cr) {
-//                            return $cr->text();
-//                        });
-//                        return [$crawler->text() => $words];
-//                    });
-//                    return [$spanishWord => $pos];
-//                } catch (\Exception $e) {  }
+                    return [$spanishWord => ["parts_of_speech" => $pos]];
+                } catch (\Exception $e) {
+                    Log::alert($e->getMessage());
+                }
             });
-                return [$spanishWord => $pos];
-        });
 
-        echo json_encode($spanishWords);exit;
-
-        $englishWords = $crawler
-            ->filter("#dictionary-neodict-es")
-            ->filter(".AJ6Kb8A8")->each(function(Crawler $nodee) {
-                return $nodee
-                    ->filter('.i57Bf7Dj + span a.YR6epHeU')
-                    ->each(function(Crawler $node) {
-                        try {
-                            return $node->filter('.YR6epHeU')->text();
-                        } catch (\Exception $e) {
-                            return 'Empty';
-                        }
-                    });
-        });
-
-        $sentences = $crawler
-            ->filter("#dictionary-neodict-es")
-            ->filter(".QkSyASiy .lbHJ7w6W ")->each(function(Crawler $crawl) {
-                return [
-                    "spanish" => $crawl->filter(".S7halQ2C")->text(),
-                    "english" => $crawl->filter(".msZ0iHzp")->text(),
-                ];
-        });
-
-
-
-        echo json_encode([$spanishWords, $englishWords, $sentences]);exit;
-        return $translation;
+        return ["spanish_words" => $spanishWords];
     }
-
-    public function getEnglishWords(Crawler $crawler)
-    {
-
-    }
-
 }

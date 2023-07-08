@@ -15,7 +15,8 @@ return new class extends Migration
             $table->id();
             $table->text('sentence');
             $table->foreignId('language_id')->constrained();
-            $table->foreignId('word_id')->constrained();
+            $table->foreignId('english_word_id')->constrained('words');
+            $table->foreignId('spanish_word_id')->constrained('words');
             $table->timestamps();
         });
     }
