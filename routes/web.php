@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Scrapers\InglesScraper;
+use App\Models\Word;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 

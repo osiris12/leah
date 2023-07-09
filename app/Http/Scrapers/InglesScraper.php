@@ -11,7 +11,6 @@ class InglesScraper extends Scraper
 {
     public function parseTranslationPage(string $word)
     {
-//        $html = $this->client->request('GET', "/traductor/$word")->getBody();
         $html = $this->client->request('GET', "/traductor/$word")->getBody();
         return $this->scrapeTranslationData($html, $word);
     }
