@@ -1,26 +1,24 @@
 import TextInput from "@/Components/TextInput.jsx";
-import { Link } from "@inertiajs/react";
 import {useEffect, useState} from "react";
 import PrimaryButton from "@/Components/PrimaryButton.jsx";
 
-export default function Welcome({words}) {
+export default function Welcome() {
     const [lookupWord, setLookupWord] = useState("");
     const [searchResults, setSearchResults] = useState("");
+    
 
     const fetchData = (value) => {
         if(value.length <= 1) {
             return false;
         }
-        fetch("http://leah.local/" + value)
+        fetch(import.meta.env.VITE_APP_URL + value)
             .then((response) => response.json())
             .then((json) => {
-                console.log(json);
                 setSearchResults(json);
             });
     }
 
     useEffect(() => {
-        console.log(lookupWord);
     }, [lookupWord]);
 
     const handleSubmit = (lookupWord) => {
@@ -46,9 +44,14 @@ export default function Welcome({words}) {
                     </PrimaryButton>
                 </div>
                 <div className=" mt-3 bg-gray-600">
-                    { searchResults &&
-                        <pre>{JSON.stringify(searchResults, null, 2)}</pre>
-                    }
+                    {console.log(searchResults)}
+                    {Object.entries(searchResults).map(([key, value]) => {
+                        return (
+                            <div key={key}>
+                                <p>{key}</p>
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
         </>

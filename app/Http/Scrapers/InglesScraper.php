@@ -11,6 +11,7 @@ class InglesScraper extends Scraper
 {
     public function parseTranslationPage(string $word)
     {
+//        $html = $this->client->request('GET', "/traductor/$word")->getBody();
         $html = $this->client->request('GET', "/traductor/$word")->getBody();
         return $this->scrapeTranslationData($html, $word);
     }
@@ -31,36 +32,41 @@ class InglesScraper extends Scraper
             return false;
         }
 
-        $spanishWords = $searchWord
-            ->each(function (Crawler $wordCrawler) {
+        $spanishWords = [];
+        $searchWord->each(function (Crawler $wordCrawler) use (&$spanishWords) {
                 try {
                     $spanishWord = $wordCrawler->filter(".jXNWfTzf")->text();
-                    $pos = $wordCrawler
+                    $pos = [];
+                    $wordCrawler
                         ->filter(".k5rFFEq7")
-                        ->each(function (Crawler $partOfSpeechCrawler) use($spanishWord) {
+                        ->each(function (Crawler $partOfSpeechCrawler) use($spanishWord, &$pos) {
                             try {
                                 $currentPos = $partOfSpeechCrawler->filter(".hWzdmlHx")->text();
-                                $englishWords = $partOfSpeechCrawler
+                                $englishWords = [];
+                                $partOfSpeechCrawler
                                     ->filter(".AJ6Kb8A8 > .lbHJ7w6W > .RiMg1_4r > .lbHJ7w6W")
-                                    ->each(function (Crawler $englishWordCrawler) use($currentPos, $spanishWord) {
+                                    ->each(function (Crawler $englishWordCrawler) use($currentPos, $spanishWord, &$englishWords) {
                                         try {
                                             $englishWord = $englishWordCrawler->filter(".YR6epHeU")->text();
                                             $sentences = [];
                                             $sentences['spanish'] = $englishWordCrawler->filter(".S7halQ2C")->text();
                                             $sentences['english'] = $englishWordCrawler->filter(".msZ0iHzp")->text();
-                                            return [$englishWord => ["sentences" => $sentences]];
+                                            $englishWords[$englishWord] = ["sentences" => $sentences];
+                                            return;
                                         } catch (InvalidArgumentException $e) {
                                             $error = "No direct translation for ($spanishWord) with part of speech of ($currentPos).";
                                             Log::alert($error);
                                         }
                                     });
-                                return [$currentPos => ["english_words" => $englishWords]];
+                                $pos[$currentPos] = ["english_words" => $englishWords];
+                                return;
                             } catch (\Exception $e) {
                                 $error = "No direct translation for ($spanishWord). ";
                                 Log::alert($error);
                             }
                         });
-                    return [$spanishWord => ["parts_of_speech" => $pos]];
+                    $spanishWords[$spanishWord] = ["parts_of_speech" => $pos];
+                    return;
                 } catch (\Exception $e) {
                     Log::alert($e->getMessage());
                 }

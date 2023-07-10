@@ -23,7 +23,7 @@ Route::get('/', function () {
 
 Route::get('/{word}', function ($word) {
     $inglesScraper = new InglesScraper();
-    return ['words' => $inglesScraper->parseTranslationPage($word)];
+    return $inglesScraper->parseTranslationPage($word);
 });
 
 Route::get('/dashboard', function () {
