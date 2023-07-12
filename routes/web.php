@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Scrapers\InglesScraper;
-use App\Models\Word;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -17,12 +16,11 @@ use Inertia\Inertia;
 |
 */
 
-Route::get('/', function () {
+Route::get('/', function (InglesScraper $inglesScraper) {
     return Inertia::render('Welcome');
 });
 
-Route::get('/{word}', function ($word) {
-    $inglesScraper = new InglesScraper();
+Route::get('/{word}', function (InglesScraper $inglesScraper, $word) {
     return $inglesScraper->parseTranslationPage($word);
 });
 

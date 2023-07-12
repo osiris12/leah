@@ -5,7 +5,7 @@ import PrimaryButton from "@/Components/PrimaryButton.jsx";
 export default function Welcome() {
     const [lookupWord, setLookupWord] = useState("");
     const [searchResults, setSearchResults] = useState("");
-    
+
 
     const fetchData = (value) => {
         if(value.length <= 1) {
@@ -44,14 +44,7 @@ export default function Welcome() {
                     </PrimaryButton>
                 </div>
                 <div className=" mt-3 bg-gray-600">
-                    {console.log(searchResults)}
-                    {Object.entries(searchResults).map(([key, value]) => {
-                        return (
-                            <div key={key}>
-                                <p>{key}</p>
-                            </div>
-                        );
-                    })}
+                    <pre>{JSON.stringify(searchResults, null, 2)}</pre>
                 </div>
             </div>
         </>
