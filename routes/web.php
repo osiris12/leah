@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Scrapers\InglesScraper;
+use App\Models\Word;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -21,7 +22,11 @@ Route::get('/', function (InglesScraper $inglesScraper) {
 });
 
 Route::get('/{word}', function (InglesScraper $inglesScraper, $word) {
-    return $inglesScraper->parseTranslationPage($word);
+    if ($existingWord = Word::firstWhere('word', $word)) {
+        return $existingWord;
+    } else {
+        return $inglesScraper->parseTranslationPage($word);
+    }
 });
 
 Route::get('/dashboard', function () {
