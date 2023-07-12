@@ -2,10 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Word;
 use Illuminate\Http\Request;
 
-class WordController extends Controller
+class DefinitionController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -26,16 +25,9 @@ class WordController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(array $word)
+    public function store(Request $request)
     {
-        $newWord = new Word();
-        $newWord->word = $word['word'];
-        $newWord->language_id = $word['language_id'];
-        $newWord->save();
-        return response([
-            'New word '.$word['word'].' created successfully',
-            201
-        ]);
+        //
     }
 
     /**

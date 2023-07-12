@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\WordType;
 use Illuminate\Http\Request;
 
 class WordTypeController extends Controller
@@ -25,9 +26,16 @@ class WordTypeController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(array $wordType)
     {
-        //
+        $wordType = new WordType();
+        $wordType->pos = $wordType['pos'];
+        $wordType->pos_full = $wordType['pos_full'];
+        $wordType->save();
+        return response([
+            'New word type '.$wordType['pos_full'].' created successfully',
+            201
+        ]);
     }
 
     /**

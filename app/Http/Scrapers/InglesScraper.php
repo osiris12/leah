@@ -9,9 +9,9 @@ use Symfony\Component\DomCrawler\Crawler;
 
 class InglesScraper extends Scraper
 {
+
     public function parseTranslationPage(string $word)
     {
-//        $html = $this->client->request('GET', "/traductor/$word")->getBody();
         $html = $this->client->request('GET', "/traductor/$word")->getBody();
         return $this->scrapeTranslationData($html, $word);
     }
@@ -43,11 +43,14 @@ class InglesScraper extends Scraper
                             try {
                                 $currentPos = $partOfSpeechCrawler->filter(".hWzdmlHx")->text();
                                 $englishWords = [];
+                                $spanishDefinitions = [];
                                 $partOfSpeechCrawler
-                                    ->filter(".AJ6Kb8A8 > .lbHJ7w6W > .RiMg1_4r > .lbHJ7w6W")
-                                    ->each(function (Crawler $englishWordCrawler) use($currentPos, $spanishWord, &$englishWords) {
+                                    ->filter(".AJ6Kb8A8 > .lbHJ7w6W")
+                                    ->each(function (Crawler $englishWordCrawler) use($currentPos, $spanishWord, &$englishWords, &$spanishDefinitions) {
                                         try {
-                                            $englishWord = $englishWordCrawler->filter(".YR6epHeU")->text();
+                                            $spanishDefinition = $englishWordCrawler->filter(".UlJJEaZY")->text();
+                                            $spanishDefinitions[] = $spanishDefinition;
+                                            $englishWord = $englishWordCrawler->filter(".RiMg1_4r > .lbHJ7w6W .YR6epHeU")->text();
                                             $sentences = [];
                                             $sentences['spanish'] = $englishWordCrawler->filter(".S7halQ2C")->text();
                                             $sentences['english'] = $englishWordCrawler->filter(".msZ0iHzp")->text();
@@ -58,7 +61,7 @@ class InglesScraper extends Scraper
                                             Log::alert($error);
                                         }
                                     });
-                                $pos[$currentPos] = ["english_words" => $englishWords];
+                                $pos[$currentPos] = ['spanish_definitions' => $spanishDefinitions, "english_words" => $englishWords];
                                 return;
                             } catch (\Exception $e) {
                                 $error = "No direct translation for ($spanishWord). ";
@@ -72,6 +75,9 @@ class InglesScraper extends Scraper
                 }
             });
 
+        $this->dictionaryController->addToDictionary($spanishWords);
+
         return $spanishWords;
     }
+
 }
