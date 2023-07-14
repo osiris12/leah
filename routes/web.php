@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\DictionaryController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Scrapers\InglesScraper;
 use App\Models\Word;
@@ -21,9 +22,13 @@ Route::get('/', function (InglesScraper $inglesScraper) {
     return Inertia::render('Welcome');
 });
 
-Route::get('/{word}', function (InglesScraper $inglesScraper, $word) {
-    if ($existingWord = Word::firstWhere('word', $word)) {
-        return $existingWord;
+Route::get('/{word}', function (
+    DictionaryController $dictionaryController,
+    InglesScraper $inglesScraper,
+    $word
+) {
+    if (Word::firstWhere('word', $word)) {
+        return $dictionaryController->getFromDictionary($word);
     } else {
         return $inglesScraper->parseTranslationPage($word);
     }
