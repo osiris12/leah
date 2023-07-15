@@ -8,6 +8,7 @@ use App\Models\Sentence;
 use App\Models\Translation;
 use App\Models\Word;
 use App\Models\WordType;
+use Illuminate\Database\Query\JoinClause;
 use Illuminate\Support\Facades\DB;
 
 class DictionaryController extends Controller
@@ -22,41 +23,52 @@ class DictionaryController extends Controller
             );
             $currentSpanishWordId = $currentSpanishWord->id;
 
-            foreach ($partsOfSpeech['parts_of_speech'] as $partOfSpeech => $definitionsAndEnglishWords) {
+            foreach ($partsOfSpeech['parts_of_speech'] as $partOfSpeech => $spanishDefinitions) {
                 $currentPos = WordType::firstOrCreate( // Find or create Word Type if it does not exist.
                     ['pos' => $partOfSpeech],
                     ['pos_full' => $partOfSpeech],
                 );
                 $currentPosId = $currentPos->id;
 
-                foreach ($definitionsAndEnglishWords['spanish_definitions'] as $definition) {
-                    $definition = preg_replace('/\(|\)/', '', $definition); // Remove parentheses from definition.
-                    Definition::firstOrCreate(
-                        ['word_id' => $currentSpanishWordId, 'word_type_id' => $currentPosId, 'definition' => $definition],
+                foreach ($spanishDefinitions['spanish_definitions'] as $spanishDefinition => $englishTranslations) {
+                    $definition = preg_replace('/\(|\)/', '', $spanishDefinition); // Remove parentheses from definition.
+                    $currentDefinition = Definition::firstOrCreate(
+                        [
+                            'word_id'      => $currentSpanishWordId,
+                            'word_type_id' => $currentPosId,
+                            'definition'   => $definition,
+                        ],
                     );
-                }
+                    $currentDefinitionId = $currentDefinition->id;
 
-                foreach ($definitionsAndEnglishWords['english_words'] as $englishWord => $sentences) {
-                    $currentEnglishWord = Word::firstOrCreate( // Find or create Word if it does not exist.
-                        ['word' => $englishWord],
-                        ['language_id' => 1],
-                    );
-                    $currentEnglishWordId = $currentEnglishWord->id;
-
-                    Translation::firstOrCreate(
-                        ['source_word_id' => $currentSpanishWordId, 'translated_word_id' => $currentEnglishWordId],
-                    );
-
-                    foreach ($sentences['sentences'] as $language => $sentence) {
-                        $languageCodes = ['english' => 1 ,'spanish' => 2];
-                        Sentence::firstOrCreate(
-                            [
-                                'english_word_id' => $currentEnglishWordId,
-                                'spanish_word_id' => $currentSpanishWordId,
-                                'language_id'     => $languageCodes[$language],
-                                'sentence' => $sentence,
-                            ]
+                    foreach ($englishTranslations as $englishTranslation => $sentences) {
+                        $currentEnglishWord = Word::firstOrCreate( // Find or create Word if it does not exist.
+                            ['word' => $englishTranslation],
+                            ['language_id' => 1],
                         );
+                        $currentEnglishWordId = $currentEnglishWord->id;
+
+                        Translation::firstOrCreate(
+                            [
+                                'word_type_id'       => $currentPosId,
+                                'source_word_id'     => $currentSpanishWordId,
+                                'translated_word_id' => $currentEnglishWordId,
+                                'definition_id'      => $currentDefinitionId,
+                            ],
+                        );
+
+                        foreach ($sentences['sentences'] as $language => $sentence) {
+                            $languageCodes = ['english' => 1 ,'spanish' => 2];
+                            Sentence::firstOrCreate(
+                                [
+                                    'sentence'        => $sentence,
+                                    'word_type_id'    => $currentPosId,
+                                    'language_id'     => $languageCodes[$language],
+                                    'english_word_id' => $currentEnglishWordId,
+                                    'spanish_word_id' => $currentSpanishWordId,
+                                ]
+                            );
+                        }
                     }
                 }
             }
@@ -67,28 +79,21 @@ class DictionaryController extends Controller
     public function getFromDictionary($word)
     {
         return DB::table('words', 'w')
-            ->select('w.id', 'w.word', 'w.language_id', 'definitions.definition', 'word_types.pos_full', 'languages.name')
-            ->leftJoin('definitions', 'w.id', '=', 'definitions.word_id')
-            ->leftJoin('word_types', 'definitions.word_type_id', '=', 'word_types.id')
-            ->leftJoin('languages', 'w.language_id', '=', 'languages.id')
+            ->select('w.word as spanish_translation', 'w2.word as english_translation', 'df.definition', 'wt.pos_full as part_of_speech', 'st.language_id as language', 'st.sentence')
+            ->leftJoin('definitions as df', 'w.id', '=', 'df.word_id')
+            ->leftJoin('word_types as wt', 'df.word_type_id', '=', 'wt.id')
+            ->leftJoin('translations as tr', function(JoinClause $join) {
+                $join->on('w.id', '=', 'tr.source_word_id')
+                     ->on('wt.id', '=', 'tr.word_type_id');
+            })
+            ->leftJoin('words as w2', 'tr.translated_word_id', '=', 'w2.id')
+            ->leftJoin('sentences as st', function(JoinClause $join) {
+                $join->on('w.id', '=', 'st.spanish_word_id')
+                     ->on('wt.id', '=', 'st.word_type_id');
+            })
             ->where('w.word', '=', $word)
             ->get();
-
-
     }
-
-    /*
-     * SELECT
-        w.id,w.word, w.language_id,
-        df.definition,
-        wt.pos_full,
-        la.name
-        FROM words w
-        LEFT JOIN definitions df ON w.id = df.word_id
-        LEFT JOIN word_types wt ON df.word_type_id = wt.id
-        LEFT JOIN languages la ON w.language_id = la.id
-        WHERE w.word = 'reir';
-     */
 }
 
 

@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('sentences', function (Blueprint $table) {
             $table->id();
             $table->text('sentence');
+            $table->foreignId('word_type_id')->constrained();
             $table->foreignId('language_id')->constrained();
             $table->foreignId('english_word_id')->constrained('words');
             $table->foreignId('spanish_word_id')->constrained('words');

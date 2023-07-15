@@ -42,26 +42,35 @@ class InglesScraper extends Scraper
                         ->each(function (Crawler $partOfSpeechCrawler) use($spanishWord, &$pos) {
                             try {
                                 $currentPos = $partOfSpeechCrawler->filter(".hWzdmlHx")->text();
-                                $englishWords = [];
                                 $spanishDefinitions = [];
                                 $partOfSpeechCrawler
                                     ->filter(".AJ6Kb8A8 > .lbHJ7w6W")
-                                    ->each(function (Crawler $englishWordCrawler) use($currentPos, $spanishWord, &$englishWords, &$spanishDefinitions) {
+                                    ->each(function (Crawler $englishWordCrawler) use($currentPos, $spanishWord, &$spanishDefinitions) {
                                         try {
                                             $spanishDefinition = $englishWordCrawler->filter(".UlJJEaZY")->text();
-                                            $spanishDefinitions[] = $spanishDefinition;
-                                            $englishWord = $englishWordCrawler->filter(".RiMg1_4r > .lbHJ7w6W .YR6epHeU")->text();
-                                            $sentences = [];
-                                            $sentences['spanish'] = $englishWordCrawler->filter(".S7halQ2C")->text();
-                                            $sentences['english'] = $englishWordCrawler->filter(".msZ0iHzp")->text();
-                                            $englishWords[$englishWord] = ["sentences" => $sentences];
-                                            return;
+                                            $englishWords = [];
+
+                                            $englishWordCrawler->filter(".RiMg1_4r > .lbHJ7w6W")->each(function(Crawler $transCrawler) use (&$englishWords) {
+                                                try {
+                                                    $englishWord = $transCrawler->filter(".YR6epHeU")->text();
+                                                    $sentences = [];
+                                                    $sentences['spanish'] = $transCrawler->filter(".S7halQ2C")->text();
+                                                    $sentences['english'] = $transCrawler->filter(".msZ0iHzp")->text();
+                                                    $englishWords[$englishWord] = ["sentences" => $sentences];
+                                                    return;
+                                                } catch (InvalidArgumentException $e) {
+                                                    $error = "No direct translation for ($spanishWord) with part of speech of ($currentPos).";
+                                                    Log::alert($error);
+                                                }
+                                            });
+
+                                            $spanishDefinitions[$spanishDefinition] = $englishWords;
                                         } catch (InvalidArgumentException $e) {
                                             $error = "No direct translation for ($spanishWord) with part of speech of ($currentPos).";
                                             Log::alert($error);
                                         }
                                     });
-                                $pos[$currentPos] = ['spanish_definitions' => $spanishDefinitions, "english_words" => $englishWords];
+                                $pos[$currentPos] = ['spanish_definitions' => $spanishDefinitions];
                                 return;
                             } catch (\Exception $e) {
                                 $error = "No direct translation for ($spanishWord). ";

@@ -13,8 +13,10 @@ return new class extends Migration
     {
         Schema::create('translations', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('word_type_id')->constrained();
             $table->foreignId('source_word_id')->constrained('words');
             $table->foreignId('translated_word_id')->constrained('words');
+            $table->foreignId('definition_id')->constrained();
             $table->timestamps();
         });
 
