@@ -84,12 +84,14 @@ class DictionaryController extends Controller
             ->leftJoin('word_types as wt', 'df.word_type_id', '=', 'wt.id')
             ->leftJoin('translations as tr', function(JoinClause $join) {
                 $join->on('w.id', '=', 'tr.source_word_id')
-                     ->on('wt.id', '=', 'tr.word_type_id');
+                     ->on('wt.id', '=', 'tr.word_type_id')
+                     ->on('df.id', '=', 'tr.definition_id');
             })
             ->leftJoin('words as w2', 'tr.translated_word_id', '=', 'w2.id')
             ->leftJoin('sentences as st', function(JoinClause $join) {
                 $join->on('w.id', '=', 'st.spanish_word_id')
-                     ->on('wt.id', '=', 'st.word_type_id');
+                     ->on('wt.id', '=', 'st.word_type_id')
+                     ->on('tr.translated_word_id', '=', 'st.english_word_id');
             })
             ->where('w.word', '=', $word)
             ->get();
