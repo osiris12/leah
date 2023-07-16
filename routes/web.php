@@ -27,7 +27,7 @@ Route::get('/{word}', function (
     InglesScraper $inglesScraper,
     $word
 ) {
-    if (Word::firstWhere('word', $word)) {
+    if (Word::where('word', $word)->where('language_id', 2)->first()) {
         return $dictionaryController->getFromDictionary($word);
     } else {
         return $inglesScraper->parseTranslationPage($word);

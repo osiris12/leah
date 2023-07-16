@@ -9,6 +9,7 @@ use App\Models\Translation;
 use App\Models\Word;
 use App\Models\WordType;
 use Illuminate\Database\Query\JoinClause;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class DictionaryController extends Controller
@@ -18,8 +19,7 @@ class DictionaryController extends Controller
     {
         foreach ($spanishWords as $spanishWord => $partsOfSpeech) {
             $currentSpanishWord = Word::firstOrCreate( // Find or create Word if it does not exist.
-                ['word' => $spanishWord],
-                ['language_id' => 2],
+                ['word' => $spanishWord, 'language_id' => 2]
             );
             $currentSpanishWordId = $currentSpanishWord->id;
 
@@ -76,25 +76,56 @@ class DictionaryController extends Controller
         return response(['message' => 'Records added successfully'], 201);
     }
 
-    public function getFromDictionary($word)
+    public function structureCollection(Collection $collection): array
     {
-        return DB::table('words', 'w')
-            ->select('w.word as spanish_translation', 'w2.word as english_translation', 'df.definition', 'wt.pos_full as part_of_speech', 'st.language_id as language', 'st.sentence')
+        $word = [];
+        for ($i = 0; $i < count($collection); $i++) {
+            $pos = str_replace(' ', '_', $collection[$i]->part_of_speech);
+            if (!array_key_exists($pos, $word)) {
+                $word[$pos] = [];
+            }
+
+            $definition = $collection[$i]->definition;
+            if (!array_key_exists($definition, $word[$pos])) {
+                $word[$pos][$definition] = [];
+            }
+
+            $englishTrans = $collection[$i]->english_translation;
+            if (!array_key_exists($englishTrans, $word[$pos][$definition])) {
+                $word[$pos][$definition][$englishTrans] = [];
+            }
+
+            $sentence = $collection[$i]->sentence;
+            $language =  $collection[$i]->language == 1 ? 'english' : 'spanish';
+            if (!array_key_exists($language, $word[$pos][$definition][$englishTrans])) {
+                $word[$pos][$definition][$englishTrans][$language] = $sentence;
+            }
+        }
+
+        return $word;
+    }
+
+    public function getFromDictionary($word): array
+    {
+        $wordSearched = DB::table('words', 'w')
+            ->select('w2.word as english_translation', 'df.definition', 'wt.pos_full as part_of_speech', 'st.language_id as language', 'st.sentence')
             ->leftJoin('definitions as df', 'w.id', '=', 'df.word_id')
             ->leftJoin('word_types as wt', 'df.word_type_id', '=', 'wt.id')
             ->leftJoin('translations as tr', function(JoinClause $join) {
                 $join->on('w.id', '=', 'tr.source_word_id')
-                     ->on('wt.id', '=', 'tr.word_type_id')
-                     ->on('df.id', '=', 'tr.definition_id');
+                    ->on('wt.id', '=', 'tr.word_type_id')
+                    ->on('df.id', '=', 'tr.definition_id');
             })
             ->leftJoin('words as w2', 'tr.translated_word_id', '=', 'w2.id')
             ->leftJoin('sentences as st', function(JoinClause $join) {
                 $join->on('w.id', '=', 'st.spanish_word_id')
-                     ->on('wt.id', '=', 'st.word_type_id')
-                     ->on('tr.translated_word_id', '=', 'st.english_word_id');
+                    ->on('wt.id', '=', 'st.word_type_id')
+                    ->on('tr.translated_word_id', '=', 'st.english_word_id');
             })
             ->where('w.word', '=', $word)
             ->get();
+
+        return $this->structureCollection($wordSearched);
     }
 }
 
