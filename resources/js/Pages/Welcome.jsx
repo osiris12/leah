@@ -1,11 +1,12 @@
 import TextInput from "@/Components/TextInput.jsx";
 import {useEffect, useState} from "react";
 import PrimaryButton from "@/Components/PrimaryButton.jsx";
+import Logo from "@/Components/Logo.jsx";
 
 export default function Welcome() {
     const [lookupWord, setLookupWord] = useState("");
     const [searchResults, setSearchResults] = useState("");
-
+    console.log(searchResults)
 
     const fetchData = async (value) => {
         if (value.length <= 1) {
@@ -27,7 +28,11 @@ export default function Welcome() {
 
     return (
         <>
-            <div className="w-full mb-48"></div>
+            <div className="mt-10">
+                <Logo></Logo>
+            </div>
+
+            <div className="w-full mb-20"></div>
             <div>
                 <div className="flex h justify-end">
                     <TextInput
@@ -43,25 +48,35 @@ export default function Welcome() {
                     > Translate
                     </PrimaryButton>
                 </div>
-                <div className="ml-3 mr-3 mt-5 grid grid-cols-1 gap-4 ">
+
+                <div className="ml-3 mr-3 mt-5 grid grid-cols-1 gap-4">
                     {Object.keys(searchResults).map((category) => (
-                        <div key={category} className="border border-white border-solid">
-                            <p><strong>PART OF SPEECH</strong></p>
-                            <h2>{category}</h2>
+                        <div key={category} className="border-solid mb-5">
+                            <div className="flex flex-col items-center">
+                                <p><strong>PART OF SPEECH</strong></p>
+                                <p>{category}</p>
+                            </div>
+
                             {Object.keys(searchResults[category]).map((verb) => (
-                                <div key={verb} className="border border-white border-solid">
+                            <div key={verb} className="border border-white border-solid mt-5">
+                                <div>
                                     <p><strong>DEFINITION</strong></p>
                                     <h3>{verb}</h3>
-                                    {Object.keys(searchResults[category][verb]).map((translation) => (
-                                        <div key={translation} className="border border-white border-solid">
+                                </div>
+                                {Object.keys(searchResults[category][verb]).map((translation) => (
+                                    <div key={translation} className="border border-white border-solid grid grid-cols-2">
+                                        <div>
                                             <p><strong>TRANSLATION</strong></p>
                                             <h4>{translation}</h4>
+                                        </div>
+                                        <div>
                                             <p><strong>USAGE EXAMPLES</strong></p>
                                             <p>Spanish: {searchResults[category][verb][translation].spanish}</p>
                                             <p>English: {searchResults[category][verb][translation].english}</p>
                                         </div>
-                                    ))}
-                                </div>
+                                    </div>
+                                ))}
+                            </div>
                             ))}
                         </div>
                     ))}
