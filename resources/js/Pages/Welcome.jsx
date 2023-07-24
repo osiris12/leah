@@ -28,13 +28,19 @@ export default function Welcome() {
 
     return (
         <>
-            <div className="mt-10">
-                <Logo></Logo>
+            <div className="flex flex-row mb-7 mt-3">
+                <div className="basis-1/4 ml-10">
+                    <Logo></Logo>
+                </div>
+                <div className="basis-3/4 self-center break-words p-5 ">
+                    <p>
+                        A simple and quick Spanish to English translator!
+                    </p>
+                </div>
             </div>
 
-            <div className="w-full mb-20"></div>
             <div>
-                <div className="flex h justify-end">
+                <div className="flex justify-end">
                     <TextInput
                         className="text-2xl bg-gray-800"
                         placeholder="search"
